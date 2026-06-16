@@ -1,0 +1,41 @@
+# Goldie's Food Ordering System - Project Rules
+
+## Tech Stack
+- Backend: Node.js + Express + Mongoose (MongoDB). CommonJS modules.
+- Frontend: Angular (Reactive Forms). Backend-first focus.
+- Real-time: Socket.IO. Image uploads: multer (local /uploads, served static).
+- Auth: JWT (jsonwebtoken) + bcrypt. Validation: express-validator. Logging: morgan.
+
+## Architecture (MVC + Services)
+- Keep server.js minimal (env, DB, Socket.IO, listen). Build the app in src/app.js.
+- Layer responsibilities, never mix them:
+  - routes/      -> define endpoints + attach middlewares only.
+  - controllers/ -> handle req/res, call services. No business logic.
+  - services/    -> pure business logic (pricing, points, tiers). No req/res.
+  - models/      -> Mongoose schemas only.
+  - middlewares/ -> auth, authorize, validate, error, logger.
+  - validators/, utils/ (ApiError, asyncHandler, upload), sockets/, config/.
+- Wrap async controllers with asyncHandler; throw ApiError; one global error handler.
+
+## Database Principles
+- Embed data owned by and read with its parent (Order.items as priced snapshots).
+- Reference shared/independent data (Product.category, Order.user).
+- Collections: User, Category, Product, Order, PointsTier, LoyaltyTransaction.
+- Order stores name+unitPrice snapshots per item (preserve historical price).
+- Loyalty: keep current balance denormalized on User.loyaltyBalance; full history
+  in append-only LoyaltyTransaction collection (never embed unbounded history).
+- PointsTier is data-driven: minAmount/maxAmount/pointsPercentage (1 point = 1 NIS).
+
+## Roles & Authorization
+- Guest (no account, checkout via Order.guestInfo), Customer (JWT), Admin (single
+  shared account, role="admin"). Protect shop/admin routes with authorize('admin').
+
+## Validation Strategy
+- Server is the source of truth: express-validator + Mongoose schema constraints.
+- Verify product existence/stock and recompute totals in services before saving.
+- Angular Reactive Forms validate for UX only, never as a replacement for server checks.
+
+## Conventions
+- File naming: *.model.js, *.controller.js, *.service.js, *.routes.js, *.middleware.js.
+- API base path: /api. RESTful resource routes.
+- Do not commit secrets; .env is gitignored.
