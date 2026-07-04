@@ -7,6 +7,7 @@ const { createRules, updateRules } = require("../validators/category.validator")
 const categoryController = require("../controllers/category.controller");
 
 router.get("/", categoryController.list);
+router.get("/active", categoryController.listActive);
 router.post(
   "/",
   requireAuth,
