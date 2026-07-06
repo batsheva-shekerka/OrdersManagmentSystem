@@ -10,6 +10,13 @@ export const routes: Routes = [
       import("./features/menu/menu.component").then((m) => m.MenuComponent),
   },
   {
+    path: "category/:categoryId",
+    loadComponent: () =>
+      import("./features/menu/category-products.component").then(
+        (m) => m.CategoryProductsComponent
+      ),
+  },
+  {
     path: "cart",
     loadComponent: () =>
       import("./features/cart/cart.component").then((m) => m.CartComponent),

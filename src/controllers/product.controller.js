@@ -1,18 +1,25 @@
 const asyncHandler = require("../utils/asyncHandler");
 const Product = require("../models/product.model");
+const productService = require("../services/product.service");
 const ApiError = require("../utils/ApiError");
 
 const list = asyncHandler(async (req, res) => {
-  const query = {};
-  if (req.query.category) query.category = req.query.category;
-  if (req.query.status) query.status = req.query.status;
-  const products = await Product.find(query).populate("category");
+  const { category, status } = req.query;
+
+  // Admin-facing requests for non-available statuses bypass the service filter.
+  if (status && status !== "available") {
+    const query = { status };
+    if (category) query.category = category;
+    const products = await Product.find(query).populate("category");
+    return res.json({ success: true, data: products });
+  }
+
+  const products = await productService.searchProducts({ category });
   res.json({ success: true, data: products });
 });
 
 const getOne = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id).populate("category");
-  if (!product) throw ApiError.notFound("Product not found");
+  const product = await productService.getProductById(req.params.id);
   res.json({ success: true, data: product });
 });
 

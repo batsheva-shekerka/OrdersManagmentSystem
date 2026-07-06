@@ -1,10 +1,11 @@
 import { Component } from "@angular/core";
 import { RouterLink, RouterOutlet } from "@angular/router";
+import { VirtualWaiterComponent } from "./features/virtual-waiter/virtual-waiter.component";
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, VirtualWaiterComponent],
   template: `
     <header class="topbar">
       <a routerLink="/" class="brand">Goldie's</a>
@@ -19,6 +20,9 @@ import { RouterLink, RouterOutlet } from "@angular/router";
     <main class="content">
       <router-outlet></router-outlet>
     </main>
+
+    <!-- Virtual Waiter floating widget — visible on every page -->
+    <app-virtual-waiter />
   `,
   styles: [
     `

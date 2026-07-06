@@ -1,14 +1,7 @@
-import { Component, OnInit, inject, signal } from "@angular/core";
+﻿import { Component, OnInit, inject, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
-import { CartService } from "../../core/services/cart.service";
-import { Product } from "../../core/models/product.model";
-
-interface ProductsResponse {
-  success: boolean;
-  data: Product[];
-}
 
 interface Category {
   _id: string;
@@ -31,8 +24,6 @@ interface CategoriesResponse {
   imports: [CommonModule, RouterLink],
   template: `
     <div class="home" dir="rtl">
-
-      <!-- Hero: split layout -->
       <section class="hero">
         <img
           class="hero__image-side"
@@ -42,74 +33,40 @@ interface CategoriesResponse {
         <div class="hero__text-side">
           <h1 class="hero__title">מגוון מגשי אירוח של גולדיס</h1>
           <p class="hero__subtitle">מתוקים, מלוחים, סלטים ועוד...</p>
-          <a class="hero__cta" href="#menu-section">הזמינו עכשיו</a>
+          <a class="hero__cta" href="#categories-section">בחרו קטגוריה</a>
         </div>
       </section>
 
-      <!-- Category image-card grid -->
-      <section class="section section--muted">
-        <div class="cat-grid">
-          @for (cat of categories(); track cat._id) {
-            <a
-              class="cat-card"
-              [routerLink]="['/menu']"
-              [queryParams]="{ category: cat._id }"
-              [style.background-image]="'url(' + assetUrl(cat.imageUrl) + ')'"
-            >
-              <span class="cat-card__overlay"></span>
-              <span class="cat-card__name">{{ cat.name }}</span>
-            </a>
-          }
-        </div>
-      </section>
-
-      <!-- Real products (all existing logic preserved) -->
-      <section id="menu-section" class="section">
-        <h2 class="section__title">התפריט שלנו</h2>
+      <section id="categories-section" class="section section--muted">
         @if (loading()) {
-          <p class="state">טוען מוצרים...</p>
-        } @else if (products().length === 0) {
-          <p class="state">אין מוצרים זמינים כרגע.</p>
+          <p class="state">טוען קטגוריות...</p>
+        } @else if (categories().length === 0) {
+          <p class="state">אין קטגוריות זמינות כרגע.</p>
         } @else {
-          <div class="grid">
-            @for (product of products(); track product._id) {
-              <article class="card">
-                <div
-                  class="card__img"
-                  [style.background-image]="product.imageUrl ? 'url(' + assetUrl(product.imageUrl) + ')' : ''"
-                ></div>
-                <div class="card__body">
-                  <h3 class="card__name">{{ product.name }}</h3>
-                  <p class="price">{{ product.price | currency: "ILS" }}</p>
-                  <p
-                    class="status"
-                    [class.status--available]="product.status === 'available'"
-                  >
-                    {{ product.status }}
-                  </p>
-                  <button
-                    class="card__btn"
-                    [disabled]="product.status !== 'available'"
-                    (click)="addToCart(product)"
-                  >
-                    הוספה לסל
-                  </button>
-                </div>
-              </article>
+          <div class="cat-grid">
+            @for (cat of categories(); track cat._id) {
+              <a
+                class="cat-card"
+                [routerLink]="['/category', cat._id]"
+                [style.background-image]="'url(' + assetUrl(cat.imageUrl) + ')'"
+                [attr.aria-label]="'צפייה במוצרי קטגוריית ' + cat.name"
+              >
+                <span class="cat-card__overlay"></span>
+                <span class="cat-card__name">{{ cat.name }}</span>
+              </a>
             }
           </div>
         }
       </section>
 
-      <!-- Footer -->
       <footer class="footer">
         <div class="footer__logo">GOLDY'S</div>
         <nav class="footer__nav">
-          <a href="#menu-section">תפריטי שבת וחג</a>
-          <a href="#menu-section">מגשי אירוח</a>
-          <a href="#menu-section">מארזים ומתנות</a>
-          <a href="#menu-section">בייקרי</a>
-          <a href="#menu-section">מתחם חגים</a>
+          <a href="#categories-section">תפריטי שבת וחג</a>
+          <a href="#categories-section">מגשי אירוח</a>
+          <a href="#categories-section">מארזים ומתנות</a>
+          <a href="#categories-section">בייקרי</a>
+          <a href="#categories-section">מתחם חגים</a>
         </nav>
         <p class="footer__contact">מאדה 9, בני ברק · עזרת תורה 18, ירושלים · 02-6200100</p>
       </footer>
@@ -125,7 +82,6 @@ interface CategoriesResponse {
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       }
 
-      /* ── Hero ── */
       .hero {
         display: flex;
         flex-direction: row-reverse;
@@ -135,9 +91,9 @@ interface CategoriesResponse {
       .hero__image-side {
         flex: 1 1 60%;
         width: 100%;
+        min-height: 420px;
         object-fit: cover;
         object-position: center;
-        min-height: 420px;
         display: block;
       }
       .hero__text-side {
@@ -178,7 +134,6 @@ interface CategoriesResponse {
         transform: translateY(-2px);
       }
 
-      /* ── Sections ── */
       .section {
         padding: 3rem 1.5rem;
       }
@@ -186,15 +141,12 @@ interface CategoriesResponse {
         background: var(--gold-cream);
         padding: 1rem;
       }
-      .section__title {
+      .state {
         text-align: center;
-        font-size: 2rem;
-        font-weight: 800;
-        margin: 0 0 2.5rem;
-        color: #2a2320;
+        color: #5b6570;
+        font-size: 1.1rem;
       }
 
-      /* ── Category image-card grid ── */
       .cat-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -239,78 +191,6 @@ interface CategoriesResponse {
         z-index: 1;
       }
 
-      /* ── Products grid ── */
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-        gap: 1.5rem;
-        max-width: 1100px;
-        margin: 0 auto;
-      }
-      .card {
-        background: #fff;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-      .card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
-      }
-      .card__img {
-        height: 150px;
-        background-color: #efe3d3;
-        background-size: cover;
-        background-position: center;
-      }
-      .card__body {
-        padding: 1.1rem;
-        text-align: center;
-      }
-      .card__name {
-        margin: 0 0 0.5rem;
-        font-size: 1.15rem;
-      }
-      .price {
-        font-weight: 800;
-        font-size: 1.2rem;
-        color: var(--gold-red);
-        margin: 0 0 0.4rem;
-      }
-      .status {
-        font-size: 0.8rem;
-        color: #98a1ab;
-        margin: 0 0 0.9rem;
-      }
-      .status--available {
-        color: #3f9142;
-      }
-      .card__btn {
-        width: 100%;
-        background: var(--gold-red);
-        color: #fff;
-        border: none;
-        padding: 0.7rem;
-        border-radius: 6px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: background 0.2s;
-      }
-      .card__btn:hover:not(:disabled) {
-        background: #a50d24;
-      }
-      .card__btn:disabled {
-        background: #cbd2d9;
-        cursor: not-allowed;
-      }
-      .state {
-        text-align: center;
-        color: #5b6570;
-        font-size: 1.1rem;
-      }
-
-      /* ── Footer ── */
       .footer {
         background: var(--gold-red);
         color: #fff;
@@ -346,7 +226,6 @@ interface CategoriesResponse {
         margin: 0;
       }
 
-      /* ── Responsive ── */
       @media (max-width: 900px) {
         .cat-grid {
           grid-template-columns: repeat(3, 1fr);
@@ -382,29 +261,18 @@ interface CategoriesResponse {
 })
 export class MenuComponent implements OnInit {
   private api = inject(ApiService);
-  private cart = inject(CartService);
 
-  products = signal<Product[]>([]);
   categories = signal<Category[]>([]);
   loading = signal(true);
 
   ngOnInit(): void {
-    this.api.get<ProductsResponse>("/products").subscribe({
+    this.api.get<CategoriesResponse>("/categories/active").subscribe({
       next: (res) => {
-        this.products.set(res.data);
+        this.categories.set(res.data);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
-
-    this.api.get<CategoriesResponse>("/categories/active").subscribe({
-      next: (res) => this.categories.set(res.data),
-      error: () => this.categories.set([]),
-    });
-  }
-
-  addToCart(product: Product): void {
-    this.cart.add(product);
   }
 
   assetUrl(path?: string): string {

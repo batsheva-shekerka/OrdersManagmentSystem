@@ -9,6 +9,8 @@
     "dev": "node --watch server.js",
     "seed": "node src/seed.js",
     "seed:categories": "node src/seed-categories.js",
+    "seed:meat-products": "node src/seed-meat-products.js",
+    "seed:catering-products": "node src/seed-catering-products.js",
     "download:images": "node src/download-images.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,6 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^2.10.0",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
@@ -24,6 +27,7 @@
     "mongoose": "^8.24.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "openai": "^6.45.0",
     "socket.io": "^4.8.1"
   }
 }
