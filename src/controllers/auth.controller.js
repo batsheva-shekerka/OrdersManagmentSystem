@@ -23,4 +23,10 @@ const me = asyncHandler(async (req, res) => {
   res.json({ success: true, user });
 });
 
-module.exports = { register, login, me };
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name, email, phone } = req.body;
+  const user = await authService.updateProfile(req.user.id, { name, email, phone });
+  res.json({ success: true, user });
+});
+
+module.exports = { register, login, me, updateProfile };

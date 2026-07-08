@@ -18,4 +18,14 @@ const loginRules = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
-module.exports = { registerRules, loginRules };
+const updateProfileRules = [
+  body("name").trim().notEmpty().withMessage("Name is required"),
+  body("email")
+    .optional({ checkFalsy: true })
+    .isEmail()
+    .withMessage("A valid email is required")
+    .normalizeEmail(),
+  body("phone").optional({ checkFalsy: true }).isString(),
+];
+
+module.exports = { registerRules, loginRules, updateProfileRules };

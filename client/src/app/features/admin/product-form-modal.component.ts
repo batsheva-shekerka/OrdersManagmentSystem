@@ -33,30 +33,55 @@ import { resolveAssetUrl } from "../../core/utils/asset-url";
         <h2 class="modal__title">{{ isEditing ? "עריכת מוצר" : "הוספת מוצר חדש" }}</h2>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="product-form">
-          <label class="product-form__field">
+          <div class="product-form__field">
             <span>שם המוצר</span>
-            <input type="text" formControlName="name" placeholder="לדוגמה: פיצה שווארמה" />
-          </label>
+            <input
+              type="text"
+              formControlName="name"
+              placeholder="לדוגמה: פיצה שווארמה"
+              [class.field__input--error]="form.controls.name.touched && form.controls.name.invalid"
+            />
+            @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+              <span class="field__error">שם המוצר הינו חובה</span>
+            }
+          </div>
 
-          <label class="product-form__field">
+          <div class="product-form__field">
             <span>קטגוריה</span>
-            <select formControlName="category">
+            <select
+              formControlName="category"
+              [class.field__input--error]="form.controls.category.touched && form.controls.category.invalid"
+            >
               <option value="" disabled>בחרו קטגוריה</option>
               @for (category of categories; track category._id) {
                 <option [value]="category._id">{{ category.name }}</option>
               }
             </select>
-          </label>
+            @if (form.controls.category.touched && form.controls.category.hasError('required')) {
+              <span class="field__error">יש לבחור קטגוריה</span>
+            }
+          </div>
 
-          <label class="product-form__field">
+          <div class="product-form__field">
             <span>תיאור</span>
             <textarea formControlName="description" rows="3" placeholder="תיאור קצר ומפתה של המוצר"></textarea>
-          </label>
+          </div>
 
-          <label class="product-form__field">
+          <div class="product-form__field">
             <span>מחיר (₪)</span>
-            <input type="number" formControlName="price" min="0" step="0.5" />
-          </label>
+            <input
+              type="number"
+              formControlName="price"
+              min="0"
+              step="0.5"
+              [class.field__input--error]="form.controls.price.touched && form.controls.price.invalid"
+            />
+            @if (form.controls.price.touched && form.controls.price.hasError('required')) {
+              <span class="field__error">יש להזין מחיר</span>
+            } @else if (form.controls.price.touched && form.controls.price.hasError('min')) {
+              <span class="field__error">המחיר חייב להיות 0 ומעלה</span>
+            }
+          </div>
 
           <div class="product-form__field">
             <span>תמונה</span>
@@ -238,6 +263,14 @@ import { resolveAssetUrl } from "../../core/utils/asset-url";
         font-size: 0.82rem;
         text-align: center;
       }
+      .field__input--error {
+        border-color: var(--color-primary) !important;
+      }
+      .field__error {
+        font-size: 0.72rem;
+        color: var(--color-primary);
+        margin-top: 0.1rem;
+      }
       .product-form__actions {
         display: flex;
         justify-content: flex-end;
@@ -313,6 +346,7 @@ export class ProductFormModalComponent implements OnChanges {
   }
 
   submit(): void {
+    this.form.markAllAsTouched();
     if (this.form.invalid) return;
     this.saving.set(true);
     this.error.set("");

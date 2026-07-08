@@ -52,6 +52,16 @@ export class AuthService {
    * before reading `user()`. No-ops for guests since there's no session to
    * refresh.
    */
+  updateProfile(payload: { name: string; email?: string; phone?: string }): Observable<User> {
+    return this.api.patch<MeResponse>("/auth/me", payload).pipe(
+      tap((res) => {
+        localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+        this.currentUser.set(res.user);
+      }),
+      map((res) => res.user)
+    );
+  }
+
   refreshProfile(): Observable<User | null> {
     if (!this.isLoggedIn()) return of(null);
     return this.api.get<MeResponse>("/auth/me").pipe(

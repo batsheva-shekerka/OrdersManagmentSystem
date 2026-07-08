@@ -1,9 +1,10 @@
 import { Component, HostListener, OnInit, inject, signal } from "@angular/core";
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
+import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { CommonModule } from "@angular/common";
 import { VirtualWaiterComponent } from "./features/virtual-waiter/virtual-waiter.component";
 import { CartDrawerComponent } from "./features/cart/cart-drawer.component";
 import { AuthModalComponent } from "./features/auth/auth-modal.component";
+import { ProfileDropdownComponent } from "./features/auth/profile-dropdown.component";
 import { CartService } from "./core/services/cart.service";
 import { CartUiService } from "./core/services/cart-ui.service";
 import { AuthService } from "./core/services/auth.service";
@@ -27,6 +28,7 @@ interface CategoriesResponse {
     VirtualWaiterComponent,
     CartDrawerComponent,
     AuthModalComponent,
+    ProfileDropdownComponent,
   ],
   template: `
     <div class="app-shell">
@@ -59,12 +61,7 @@ interface CategoriesResponse {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                 מנהל/ת
               </span>
-              <button type="button" class="icon-btn" aria-label="התנתקות" (click)="logout()">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
+              <app-profile-dropdown />
             </div>
           } @else {
             <!-- ── Customer / guest nav ── -->
@@ -130,12 +127,7 @@ interface CategoriesResponse {
               </button>
 
               @if (auth.isLoggedIn()) {
-                <a routerLink="/orders" class="icon-btn" aria-label="החשבון שלי">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <circle cx="12" cy="8" r="3.5" />
-                    <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" stroke-linecap="round" />
-                  </svg>
-                </a>
+                <app-profile-dropdown />
               } @else {
                 <button type="button" class="icon-btn" aria-label="התחברות" (click)="authUi.open('login')">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -427,7 +419,6 @@ interface CategoriesResponse {
 })
 export class AppComponent implements OnInit {
   private api = inject(ApiService);
-  private router = inject(Router);
   protected cart = inject(CartService);
   protected cartUi = inject(CartUiService);
   protected auth = inject(AuthService);
@@ -449,10 +440,5 @@ export class AppComponent implements OnInit {
   @HostListener("window:scroll")
   onScroll(): void {
     this.scrolled.set(window.scrollY > 10);
-  }
-
-  logout(): void {
-    this.auth.logout();
-    this.router.navigate(["/menu"]);
   }
 }

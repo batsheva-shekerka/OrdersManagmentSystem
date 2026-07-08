@@ -104,7 +104,14 @@ function israeliPhoneValidator(): ValidatorFn {
                 @if (form.value.type === "delivery") {
                   <div class="field">
                     <label>כתובת למשלוח</label>
-                    <input formControlName="deliveryAddress" placeholder="רחוב, מספר בית, עיר" />
+                    <input
+                      formControlName="deliveryAddress"
+                      placeholder="רחוב, מספר בית, עיר"
+                      [class.field__input--error]="form.controls.deliveryAddress.touched && !form.controls.deliveryAddress.value?.trim()"
+                    />
+                    @if (form.controls.deliveryAddress.touched && !form.controls.deliveryAddress.value?.trim()) {
+                      <span class="field__error">יש להזין כתובת למשלוח</span>
+                    }
                   </div>
                 }
 
@@ -122,6 +129,9 @@ function israeliPhoneValidator(): ValidatorFn {
                       </button>
                     }
                   </div>
+                  @if (form.controls.pickupLocation.touched && !form.value.pickupLocation) {
+                    <span class="field__error" style="margin-top:0.4rem; display:block">יש לבחור סניף לאיסוף</span>
+                  }
                 }
               </section>
 
@@ -134,10 +144,10 @@ function israeliPhoneValidator(): ValidatorFn {
                       <input
                         formControlName="guestName"
                         placeholder="שם מלא"
-                        [class.field__input--error]="form.get('guestName')?.touched && !form.get('guestName')?.value?.trim()"
+                        [class.field__input--error]="form.controls.guestName.touched && form.controls.guestName.invalid"
                       />
-                      @if (form.get('guestName')?.touched && !form.get('guestName')?.value?.trim()) {
-                        <span class="field__error">יש להזין שם מלא</span>
+                      @if (form.controls.guestName.touched && form.controls.guestName.hasError('required')) {
+                        <span class="field__error">שדה זה הינו חובה</span>
                       }
                     </div>
                     <div class="field">
@@ -813,7 +823,7 @@ export class CheckoutComponent implements OnInit {
     type: ["delivery" as FulfillmentType, Validators.required],
     deliveryAddress: [""],
     pickupLocation: [""],
-    guestName: [""],
+    guestName: ["", Validators.required],
     guestPhone: ["", israeliPhoneValidator()],
   });
 
@@ -922,13 +932,8 @@ export class CheckoutComponent implements OnInit {
 
   submit(): void {
     // Touch all fields so inline errors appear immediately on first attempt.
-    this.form.get("guestName")?.markAsTouched();
-    this.form.get("guestPhone")?.markAsTouched();
-    if (this.paymentForm.value.method === "card") {
-      (["cardNumber", "expiry", "cvv", "ownerId"] as const).forEach((f) =>
-        this.paymentForm.get(f)?.markAsTouched()
-      );
-    }
+    this.form.markAllAsTouched();
+    this.paymentForm.markAllAsTouched();
     if (!this.canSubmit()) return;
     this.submitting.set(true);
     this.error.set(null);

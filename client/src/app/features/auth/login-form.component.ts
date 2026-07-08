@@ -15,8 +15,31 @@ import { AuthService } from "../../core/services/auth.service";
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
-      <input type="email" formControlName="email" placeholder="כתובת מייל" />
-      <input type="password" formControlName="password" placeholder="סיסמה..." />
+      <div class="input-wrap">
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="כתובת מייל"
+          [class.input--error]="form.controls.email.touched && form.controls.email.invalid"
+        />
+        @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+          <span class="field-error">שדה זה הינו חובה</span>
+        } @else if (form.controls.email.touched && form.controls.email.hasError('email')) {
+          <span class="field-error">כתובת האימייל אינה תקינה</span>
+        }
+      </div>
+
+      <div class="input-wrap">
+        <input
+          type="password"
+          formControlName="password"
+          placeholder="סיסמה..."
+          [class.input--error]="form.controls.password.touched && form.controls.password.invalid"
+        />
+        @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+          <span class="field-error">שדה זה הינו חובה</span>
+        }
+      </div>
       <div class="auth-row">
         <label class="remember">
           <input type="checkbox" formControlName="remember" />
@@ -40,6 +63,18 @@ import { AuthService } from "../../core/services/auth.service";
         display: flex;
         flex-direction: column;
         gap: 0.85rem;
+      }
+      .input-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .field-error {
+        font-size: 0.72rem;
+        color: var(--color-primary);
+      }
+      .input--error {
+        border-color: var(--color-primary) !important;
       }
       .auth-form input {
         width: 100%;
