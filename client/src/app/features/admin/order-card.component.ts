@@ -26,7 +26,15 @@ export type OrderCardStage = "new" | "waiting" | "completed";
         }
       </header>
 
-      <p class="order-card__customer">{{ customerName }}</p>
+      <div class="order-card__customer-row">
+        <span class="order-card__customer">{{ customerName }}</span>
+        @if (customerPhone) {
+          <a class="order-card__phone" [href]="'tel:' + customerPhone">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.46 16z"/></svg>
+            {{ customerPhone }}
+          </a>
+        }
+      </div>
 
       <ul class="order-card__items">
         @for (item of order.items; track item._id) {
@@ -86,10 +94,32 @@ export type OrderCardStage = "new" | "waiting" | "completed";
         font-size: 0.78rem;
         color: var(--color-text-muted);
       }
+      .order-card__customer-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
       .order-card__customer {
-        margin: 0;
         font-weight: 700;
         font-size: 0.95rem;
+      }
+      .order-card__phone {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        text-decoration: none;
+        background: var(--color-primary-light);
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        white-space: nowrap;
+        transition: background 0.12s;
+      }
+      .order-card__phone:hover {
+        background: #fca89a;
       }
       .order-card__items {
         margin: 0;
@@ -199,6 +229,16 @@ export class OrderCardComponent {
       return user.name;
     }
     return "לקוח";
+  }
+
+  get customerPhone(): string | null {
+    const guestPhone = this.order.guestInfo?.phone;
+    if (guestPhone) return guestPhone;
+    const user = this.order.user;
+    if (user && typeof user === "object" && "phone" in user) {
+      return (user as { phone?: string }).phone ?? null;
+    }
+    return null;
   }
 
   get statusLabel(): string {

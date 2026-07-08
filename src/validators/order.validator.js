@@ -1,5 +1,8 @@
 const { body } = require("express-validator");
 
+/** Accepts: 05X-XXXXXXX | 05XXXXXXXX | 0X-XXXXXXX (landlines) */
+const IL_PHONE_RE = /^0(5[0-9][-]?\d{7}|[2-9]\d[-]?\d{6,7})$/;
+
 const ORDER_STATUSES = [
   "pending",
   "in_preparation",
@@ -31,8 +34,18 @@ const createRules = [
     .optional()
     .isIn(["card", "cash"])
     .withMessage("Invalid payment method"),
-  body("guestInfo.name").optional().isString(),
-  body("guestInfo.phone").optional().isString(),
+  body("guestInfo.name").optional().isString().trim().notEmpty().withMessage("Guest name is required"),
+  body("guestInfo.phone")
+    .optional()
+    .isString()
+    .custom((val) => {
+      if (!val) return true;
+      const normalized = val.replace(/\s/g, "");
+      if (!IL_PHONE_RE.test(normalized)) {
+        throw new Error("מספר טלפון לא תקין — יש להזין מספר ישראלי תקני");
+      }
+      return true;
+    }),
   body("guestInfo.email").optional({ checkFalsy: true }).isEmail(),
 ];
 

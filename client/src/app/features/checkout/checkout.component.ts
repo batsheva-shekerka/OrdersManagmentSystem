@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { CartService } from "../../core/services/cart.service";
@@ -24,6 +24,17 @@ const PICKUP_BRANCHES: { id: PickupLocation; name: string; address: string }[] =
   { id: "bnei_brak", name: "בני ברק", address: "מאדה 9" },
   { id: "jerusalem", name: "ירושלים", address: "עזרת תורה 18" },
 ];
+
+/** Accepts: 05X-XXXXXXX | 05XXXXXXXX | 0X-XXXXXXX | 0XXXXXXXX (landlines too) */
+const IL_PHONE_RE = /^0(5[0-9][-]?\d{7}|[2-9]\d[-]?\d{6,7})$/;
+
+function israeliPhoneValidator(): ValidatorFn {
+  return (ctrl: AbstractControl) => {
+    const v = (ctrl.value ?? "").replace(/\s/g, "");
+    if (!v) return null; // required check handled separately
+    return IL_PHONE_RE.test(v) ? null : { invalidPhone: true };
+  };
+}
 
 @Component({
   selector: "app-checkout",
@@ -120,11 +131,28 @@ const PICKUP_BRANCHES: { id: PickupLocation; name: string; address: string }[] =
                   <div class="field-row">
                     <div class="field">
                       <label>שם מלא</label>
-                      <input formControlName="guestName" placeholder="שם מלא" />
+                      <input
+                        formControlName="guestName"
+                        placeholder="שם מלא"
+                        [class.field__input--error]="form.get('guestName')?.touched && !form.get('guestName')?.value?.trim()"
+                      />
+                      @if (form.get('guestName')?.touched && !form.get('guestName')?.value?.trim()) {
+                        <span class="field__error">יש להזין שם מלא</span>
+                      }
                     </div>
                     <div class="field">
                       <label>טלפון</label>
-                      <input formControlName="guestPhone" placeholder="טלפון" />
+                      <input
+                        type="tel"
+                        formControlName="guestPhone"
+                        placeholder="05X-XXXXXXX"
+                        inputmode="tel"
+                        maxlength="11"
+                        [class.field__input--error]="isPhoneInvalid()"
+                      />
+                      @if (isPhoneInvalid()) {
+                        <span class="field__error">מספר טלפון לא תקין — יש להזין מספר ישראלי (לדוגמה: 050-1234567)</span>
+                      }
                     </div>
                   </div>
                 </section>
@@ -786,7 +814,7 @@ export class CheckoutComponent implements OnInit {
     deliveryAddress: [""],
     pickupLocation: [""],
     guestName: [""],
-    guestPhone: [""],
+    guestPhone: ["", israeliPhoneValidator()],
   });
 
   paymentForm = this.fb.nonNullable.group({
@@ -864,13 +892,21 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
+  /** Shows phone error only after the user has touched the field. */
+  isPhoneInvalid(): boolean {
+    const ctrl = this.form.get("guestPhone");
+    return !!(ctrl?.touched && ctrl?.hasError("invalidPhone"));
+  }
+
   canSubmit(): boolean {
     const v = this.form.getRawValue();
     if (!v.type) return false;
     if (v.type === "delivery" && !v.deliveryAddress.trim()) return false;
     if (v.type === "pickup" && !v.pickupLocation) return false;
-    if (!this.auth.isLoggedIn() && (!v.guestName.trim() || !v.guestPhone.trim())) {
-      return false;
+    if (!this.auth.isLoggedIn()) {
+      if (!v.guestName.trim()) return false;
+      if (!v.guestPhone.trim()) return false;
+      if (this.form.get("guestPhone")?.hasError("invalidPhone")) return false;
     }
     // Payment validation
     if (this.paymentForm.value.method === "card") {
@@ -885,7 +921,9 @@ export class CheckoutComponent implements OnInit {
   }
 
   submit(): void {
-    // Touch card fields so inline errors appear immediately on first attempt.
+    // Touch all fields so inline errors appear immediately on first attempt.
+    this.form.get("guestName")?.markAsTouched();
+    this.form.get("guestPhone")?.markAsTouched();
     if (this.paymentForm.value.method === "card") {
       (["cardNumber", "expiry", "cvv", "ownerId"] as const).forEach((f) =>
         this.paymentForm.get(f)?.markAsTouched()
