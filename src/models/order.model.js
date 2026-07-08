@@ -38,6 +38,10 @@ const fulfillmentSchema = new mongoose.Schema(
     deliveryAddress: { type: String, trim: true },
     tableNumber: { type: String, trim: true },
     pickupTime: { type: Date },
+    pickupLocation: {
+      type: String,
+      enum: ["bnei_brak", "jerusalem"],
+    },
   },
   { _id: false }
 );
@@ -73,6 +77,16 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "PointsTier",
       default: null,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["card", "cash"],
+      default: "cash",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "cash_on_delivery"],
+      default: "cash_on_delivery",
     },
   },
   { timestamps: true }

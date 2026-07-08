@@ -5,6 +5,9 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
+export type PaymentMethod = "card" | "cash";
+export type PaymentStatus = "pending" | "paid" | "cash_on_delivery";
+
 export type ItemStatus =
   | "pending"
   | "preparing"
@@ -13,6 +16,7 @@ export type ItemStatus =
   | "cancelled";
 
 export type FulfillmentType = "delivery" | "dine_in" | "pickup";
+export type PickupLocation = "bnei_brak" | "jerusalem";
 
 export interface OrderItem {
   _id?: string;
@@ -28,6 +32,7 @@ export interface Fulfillment {
   deliveryAddress?: string;
   tableNumber?: string;
   pickupTime?: string;
+  pickupLocation?: PickupLocation;
 }
 
 export interface GuestInfo {
@@ -36,10 +41,18 @@ export interface GuestInfo {
   email?: string;
 }
 
+/** Populated shape of `Order.user` when fetched by the admin order list. */
+export interface OrderUserRef {
+  _id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
 export interface Order {
   _id: string;
   orderNumber: string;
-  user?: string | null;
+  user?: string | OrderUserRef | null;
   guestInfo?: GuestInfo;
   items: OrderItem[];
   status: OrderStatus;
@@ -49,6 +62,9 @@ export interface Order {
   pointsRedeemed: number;
   total: number;
   pointsEarned: number;
+  appliedTier?: string | null;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
   createdAt?: string;
 }
 
@@ -57,4 +73,5 @@ export interface CreateOrderPayload {
   fulfillment: Fulfillment;
   guestInfo?: GuestInfo;
   pointsRedeemed?: number;
+  paymentMethod?: PaymentMethod;
 }

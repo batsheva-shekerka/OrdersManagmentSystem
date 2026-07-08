@@ -8,8 +8,10 @@ import {
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { AgentService, AgentHistoryTurn } from "../../core/services/agent.service";
+import { AgentService, AgentHistoryTurn, CartAddition } from "../../core/services/agent.service";
 import { AuthService } from "../../core/services/auth.service";
+import { CartService } from "../../core/services/cart.service";
+import { Product } from "../../core/models/product.model";
 
 interface ChatMessage {
   sender: "user" | "agent";
@@ -278,6 +280,7 @@ const GUEST_USER_ID = "000000000000000000000001";
 export class VirtualWaiterComponent implements OnInit {
   private agentService = inject(AgentService);
   private authService = inject(AuthService);
+  private cartService = inject(CartService);
 
   @ViewChild("scrollContainer") private scrollContainer!: ElementRef<HTMLDivElement>;
 
@@ -325,18 +328,44 @@ export class VirtualWaiterComponent implements OnInit {
       next: (res) => {
         this.loading.set(false);
         this.conversationHistory = res.history ?? this.conversationHistory;
+
+        // Sync the frontend in-memory cart with any items the agent added
+        if (res.cartAdditions && res.cartAdditions.length > 0) {
+          res.cartAdditions.forEach((addition: CartAddition) => {
+            const product: Product = {
+              _id: addition._id,
+              name: addition.name,
+              price: addition.price,
+              imageUrl: addition.imageUrl,
+              status: "available",
+              stock: 999,
+              isActive: true,
+              category: "",
+            };
+            this.cartService.add(product, addition.quantity);
+          });
+        }
+
+        const text = res.response ?? "מצטערים, לא הגיעה תשובה מהשרת.";
         this.messages.update((msgs) => [
           ...msgs,
-          { sender: "agent", text: res.response },
+          { sender: "agent", text },
         ]);
         if (!this.isOpen()) this.unread.update((n) => n + 1);
         setTimeout(() => this.scrollToBottom(), 30);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading.set(false);
+        const status = (err as { status?: number })?.status;
+        const errText =
+          status === 429
+            ? "המלצר עסוק מאוד כרגע — אנא נסה שוב בעוד כמה שניות."
+            : status === 503
+            ? "השירות אינו זמין כרגע — נסה שוב בקרוב."
+            : "אירעה שגיאה. אנא נסה שנית.";
         this.messages.update((msgs) => [
           ...msgs,
-          { sender: "agent", text: "אירעה שגיאה. אנא נסה שנית." },
+          { sender: "agent", text: errText },
         ]);
         setTimeout(() => this.scrollToBottom(), 30);
       },

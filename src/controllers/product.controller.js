@@ -6,6 +6,16 @@ const ApiError = require("../utils/ApiError");
 const list = asyncHandler(async (req, res) => {
   const { category, status } = req.query;
 
+  // Admin management view: every product regardless of status/isActive.
+  if (status === "all") {
+    const query = {};
+    if (category) query.category = category;
+    const products = await Product.find(query)
+      .populate("category")
+      .sort({ createdAt: -1 });
+    return res.json({ success: true, data: products });
+  }
+
   // Admin-facing requests for non-available statuses bypass the service filter.
   if (status && status !== "available") {
     const query = { status };

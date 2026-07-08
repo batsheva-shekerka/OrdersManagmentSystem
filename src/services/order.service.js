@@ -42,7 +42,7 @@ async function buildLineItems(items) {
 }
 
 async function createOrder(payload, currentUser) {
-  const { items, fulfillment, guestInfo, pointsRedeemed = 0 } = payload;
+  const { items, fulfillment, guestInfo, pointsRedeemed = 0, paymentMethod = "cash" } = payload;
 
   if (!fulfillment || !fulfillment.type) {
     throw ApiError.badRequest("Fulfillment type is required");
@@ -72,6 +72,9 @@ async function createOrder(payload, currentUser) {
     ? loyaltyService.computePoints(subtotal, tier)
     : 0;
 
+  // Card payments are considered paid immediately (mock); cash is settled on delivery/pickup.
+  const paymentStatus = paymentMethod === "card" ? "paid" : "cash_on_delivery";
+
   const order = await Order.create({
     user: currentUser ? currentUser.id : null,
     guestInfo: currentUser ? undefined : guestInfo,
@@ -83,6 +86,8 @@ async function createOrder(payload, currentUser) {
     total,
     pointsEarned,
     appliedTier: tier ? tier._id : null,
+    paymentMethod,
+    paymentStatus,
   });
 
   for (const item of lineItems) {
@@ -118,7 +123,9 @@ async function createOrder(payload, currentUser) {
 async function getOrders(filter = {}) {
   const query = {};
   if (filter.status) query.status = filter.status;
-  return Order.find(query).sort({ createdAt: -1 });
+  return Order.find(query)
+    .populate("user", "name phone email")
+    .sort({ createdAt: -1 });
 }
 
 async function getOrdersByUser(userId) {

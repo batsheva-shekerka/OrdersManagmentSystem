@@ -22,7 +22,15 @@ const createRules = [
   body("fulfillment.type")
     .isIn(["delivery", "dine_in", "pickup"])
     .withMessage("Invalid fulfillment type"),
+  body("fulfillment.pickupLocation")
+    .optional()
+    .isIn(["bnei_brak", "jerusalem"])
+    .withMessage("Invalid pickup location"),
   body("pointsRedeemed").optional().isInt({ min: 0 }),
+  body("paymentMethod")
+    .optional()
+    .isIn(["card", "cash"])
+    .withMessage("Invalid payment method"),
   body("guestInfo.name").optional().isString(),
   body("guestInfo.phone").optional().isString(),
   body("guestInfo.email").optional({ checkFalsy: true }).isEmail(),

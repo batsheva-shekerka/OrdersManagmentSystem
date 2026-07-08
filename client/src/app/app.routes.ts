@@ -48,11 +48,22 @@ export const routes: Routes = [
         (m) => m.OrdersComponent
       ),
   },
+  { path: "admin", redirectTo: "admin/dashboard" },
   {
-    path: "admin",
+    path: "admin/dashboard",
     canActivate: [adminGuard],
     loadComponent: () =>
-      import("./features/admin/admin.component").then((m) => m.AdminComponent),
+      import("./features/admin/admin-dashboard.component").then(
+        (m) => m.AdminDashboardComponent
+      ),
+  },
+  {
+    path: "admin/products",
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import("./features/admin/admin-products.component").then(
+        (m) => m.AdminProductsComponent
+      ),
   },
   { path: "**", redirectTo: "menu" },
 ];

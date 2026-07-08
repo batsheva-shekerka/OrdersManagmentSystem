@@ -42,6 +42,26 @@ export class CartService {
     );
   }
 
+  /** Current quantity of a product in the cart (0 if absent). Used by quantity steppers. */
+  quantityOf(productId: string): number {
+    return this.lines().find((l) => l.product._id === productId)?.quantity ?? 0;
+  }
+
+  /** Decrease quantity by one; removes the line entirely once it reaches zero. */
+  decrement(productId: string): void {
+    const line = this.lines().find((l) => l.product._id === productId);
+    if (!line) return;
+    if (line.quantity <= 1) {
+      this.remove(productId);
+    } else {
+      this.lines.update((lines) =>
+        lines.map((l) =>
+          l.product._id === productId ? { ...l, quantity: l.quantity - 1 } : l
+        )
+      );
+    }
+  }
+
   clear(): void {
     this.lines.set([]);
   }

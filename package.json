@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
+    "dev": "nodemon server.js",
     "seed": "node src/seed.js",
     "seed:categories": "node src/seed-categories.js",
     "seed:meat-products": "node src/seed-meat-products.js",
@@ -29,5 +29,8 @@
     "multer": "^1.4.5-lts.1",
     "openai": "^6.45.0",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

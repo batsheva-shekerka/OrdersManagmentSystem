@@ -114,9 +114,26 @@ async function executeTool(toolName, args, userId) {
       return { error: "המשתמש לא מחובר. לא ניתן להוסיף לסל." };
     }
     try {
-      const cart = await addToCart(userId, args.productId, args.quantity ?? 1);
+      const qty = args.quantity ?? 1;
+      const cart = await addToCart(userId, args.productId, qty);
       const totalItems = cart.items.reduce((sum, i) => sum + i.quantity, 0);
-      return { success: true, totalItemsInCart: totalItems };
+      const addedItem = cart.items.find(
+        (i) => String(i.product._id) === String(args.productId)
+      );
+      return {
+        success: true,
+        totalItemsInCart: totalItems,
+        addedProduct: addedItem
+          ? {
+              _id: String(addedItem.product._id),
+              name: addedItem.product.name,
+              price: addedItem.product.price,
+              imageUrl: addedItem.product.imageUrl ?? "",
+              status: "available",
+              quantity: qty,
+            }
+          : null,
+      };
     } catch (err) {
       console.error("[agent] addToCart failed:", err); // eslint-disable-line no-console
       return { error: err.message };
@@ -173,21 +190,61 @@ const chat = asyncHandler(async (req, res) => {
   // ---- Agentic loop ---------------------------------------------------
   const MAX_ITERATIONS = 5;
   let userTurn = message.trim();
+  const cartAdditions = [];
+
+  /** Wrap sendMessage so 429/503 from Gemini surfaces as a friendly ApiError */
+  async function safeSend(session, turn) {
+    try {
+      return await session.sendMessage({ message: turn });
+    } catch (err) {
+      const code = err?.status ?? err?.code;
+      if (code === 429) {
+        throw ApiError.create(
+          429,
+          "המלצר הווירטואלי עסוק מאוד כרגע — אנא נסה שוב בעוד כמה שניות."
+        );
+      }
+      if (code === 503) {
+        throw ApiError.create(
+          503,
+          "שירות ה-AI אינו זמין כרגע — נסה שוב בעוד מספר שניות."
+        );
+      }
+      throw err;
+    }
+  }
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
-    const response = await session.sendMessage({ message: userTurn });
+    const response = await safeSend(session, userTurn);
 
     const functionCalls = response.functionCalls;
 
     // No tool calls → final text answer
     if (!functionCalls || functionCalls.length === 0) {
-      return res.json({ response: response.text, history: session.getHistory() });
+      return res.json({
+        response: response.text,
+        history: session.getHistory(),
+        cartAdditions,
+      });
     }
 
     // Execute each tool call and collect results
     const functionResponses = [];
     for (const call of functionCalls) {
       const toolResult = await executeTool(call.name, call.args, userId);
+
+      // Track successful cart additions so the frontend can sync its local cart
+      if (
+        call.name === "addToCart" &&
+        toolResult.success &&
+        toolResult.addedProduct
+      ) {
+        cartAdditions.push({
+          ...toolResult.addedProduct,
+          quantity: toolResult.addedProduct.quantity,
+        });
+      }
+
       functionResponses.push({
         functionResponse: {
           name: call.name,
@@ -204,6 +261,7 @@ const chat = asyncHandler(async (req, res) => {
   res.json({
     response: "מצטערים, לא הצלחתי לעבד את הבקשה. נסה שנית בבקשה.",
     history: session.getHistory(),
+    cartAdditions,
   });
 });
 

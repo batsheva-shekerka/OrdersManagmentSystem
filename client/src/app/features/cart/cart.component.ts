@@ -1,31 +1,24 @@
-import { Component, inject } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { RouterLink } from "@angular/router";
-import { CartService } from "../../core/services/cart.service";
+import { Component, OnInit, inject } from "@angular/core";
+import { Router } from "@angular/router";
+import { CartUiService } from "../../core/services/cart-ui.service";
 
+/**
+ * The cart is now presented as a slide-out drawer (see CartDrawerComponent),
+ * rendered globally from the app shell. This route exists only so that
+ * direct links / bookmarks to /cart keep working — it opens the drawer over
+ * the menu page instead of rendering its own full-page view.
+ */
 @Component({
   selector: "app-cart",
   standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
-    <h1>Cart</h1>
-    @if (cart.items().length === 0) {
-      <p>Your cart is empty.</p>
-    } @else {
-      <ul>
-        @for (line of cart.items(); track line.product._id) {
-          <li>
-            {{ line.product.name }} x{{ line.quantity }} —
-            {{ line.product.price * line.quantity | currency: "ILS" }}
-            <button (click)="cart.remove(line.product._id)">Remove</button>
-          </li>
-        }
-      </ul>
-      <p class="total">Subtotal: {{ cart.subtotal() | currency: "ILS" }}</p>
-      <a routerLink="/checkout"><button>Proceed to checkout</button></a>
-    }
-  `,
+  template: "",
 })
-export class CartComponent {
-  cart = inject(CartService);
+export class CartComponent implements OnInit {
+  private cartUi = inject(CartUiService);
+  private router = inject(Router);
+
+  ngOnInit(): void {
+    this.cartUi.open();
+    this.router.navigate(["/menu"], { replaceUrl: true });
+  }
 }

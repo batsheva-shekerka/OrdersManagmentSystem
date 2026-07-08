@@ -2,6 +2,7 @@
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
+import { resolveAssetUrl } from "../../core/utils/asset-url";
 
 interface Category {
   _id: string;
@@ -23,7 +24,7 @@ interface CategoriesResponse {
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="home" dir="rtl">
+    <div class="home">
       <section class="hero">
         <img
           class="hero__image-side"
@@ -75,11 +76,9 @@ interface CategoriesResponse {
   styles: [
     `
       .home {
-        --gold-red: #c8102e;
-        --gold-cream: #f5f0e8;
         margin: -1.5rem;
-        color: #1f2933;
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: var(--color-text);
+        font-family: var(--font-family);
       }
 
       .hero {
@@ -103,34 +102,34 @@ interface CategoriesResponse {
         justify-content: center;
         align-items: flex-start;
         padding: 3rem 3.5rem;
-        background: #fff;
+        background: var(--color-surface);
         text-align: right;
       }
       .hero__title {
         font-size: 2.4rem;
         font-weight: 800;
         line-height: 1.25;
-        color: #1a1a1a;
+        color: var(--color-text);
         margin: 0 0 1rem;
       }
       .hero__subtitle {
         font-size: 1.1rem;
-        color: #5b6570;
+        color: var(--color-text-muted);
         margin: 0 0 2rem;
       }
       .hero__cta {
         display: inline-block;
-        background: var(--gold-red);
-        color: #fff;
+        background: var(--color-primary);
+        color: var(--color-text-on-primary);
         text-decoration: none;
         padding: 0.85rem 2.5rem;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         font-weight: 700;
         font-size: 1rem;
         transition: background 0.2s, transform 0.15s;
       }
       .hero__cta:hover {
-        background: #a50d24;
+        background: var(--color-primary-dark);
         transform: translateY(-2px);
       }
 
@@ -138,12 +137,12 @@ interface CategoriesResponse {
         padding: 3rem 1.5rem;
       }
       .section--muted {
-        background: var(--gold-cream);
+        background: var(--color-bg);
         padding: 1rem;
       }
       .state {
         text-align: center;
-        color: #5b6570;
+        color: var(--color-text-muted);
         font-size: 1.1rem;
       }
 
@@ -192,7 +191,7 @@ interface CategoriesResponse {
       }
 
       .footer {
-        background: var(--gold-red);
+        background: var(--color-primary);
         color: #fff;
         text-align: center;
         padding: 2.5rem 1.5rem;
@@ -276,7 +275,6 @@ export class MenuComponent implements OnInit {
   }
 
   assetUrl(path?: string): string {
-    if (!path) return "";
-    return path.startsWith("/") ? path : `/${path}`;
+    return resolveAssetUrl(path);
   }
 }

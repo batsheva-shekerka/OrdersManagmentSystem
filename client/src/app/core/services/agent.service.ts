@@ -26,10 +26,25 @@ export interface AgentChatRequest {
   history?: AgentHistoryTurn[];
 }
 
+/**
+ * A product that was added to the server-side cart during the last agent turn.
+ * The frontend should sync its local CartService with these additions.
+ */
+export interface CartAddition {
+  _id: string;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  status: string;
+  quantity: number;
+}
+
 export interface AgentChatResponse {
   response: string;
   /** Full updated conversation history — pass this back on the next call. */
   history: AgentHistoryTurn[];
+  /** Products added to the cart during this turn (if any). */
+  cartAdditions?: CartAddition[];
 }
 
 @Injectable({ providedIn: "root" })
