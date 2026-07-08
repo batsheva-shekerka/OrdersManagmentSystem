@@ -1,9 +1,25 @@
 import { Component, inject, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from "@angular/forms";
 import { AuthService } from "../../core/services/auth.service";
 import { AuthUiService } from "../../core/services/auth-ui.service";
 import { LoginFormComponent } from "./login-form.component";
+
+const STRONG_PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const IL_PHONE_RE = /^0(5[0-9][-]?\d{7}|[2-9]\d[-]?\d{6,7})$/;
+
+function strongPasswordValidator(): ValidatorFn {
+  return (ctrl: AbstractControl) =>
+    !ctrl.value || STRONG_PASSWORD_RE.test(ctrl.value) ? null : { weakPassword: true };
+}
+
+function israeliPhoneValidator(): ValidatorFn {
+  return (ctrl: AbstractControl) => {
+    const v = (ctrl.value ?? "").replace(/\s/g, "");
+    if (!v) return null;
+    return IL_PHONE_RE.test(v) ? null : { invalidPhone: true };
+  };
+}
 
 @Component({
   selector: "app-auth-modal",
@@ -21,17 +37,68 @@ import { LoginFormComponent } from "./login-form.component";
             @if (ui.mode() === "register") {
               <h2 class="modal__title">יצירת חשבון חדש</h2>
               <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="auth-form">
-                <input type="text" formControlName="name" placeholder="שם מלא" />
-                <input type="email" formControlName="email" placeholder="כתובת מייל" />
-                <input type="tel" formControlName="phone" placeholder="טלפון" />
-                <input type="password" formControlName="password" placeholder="סיסמה" />
+
+                <div class="input-wrap">
+                  <input
+                    type="text"
+                    formControlName="name"
+                    placeholder="שם מלא"
+                    [class.input--error]="registerForm.controls.name.touched && registerForm.controls.name.invalid"
+                  />
+                  @if (registerForm.controls.name.touched && registerForm.controls.name.hasError('required')) {
+                    <span class="field-error">שדה זה הינו חובה</span>
+                  } @else if (registerForm.controls.name.touched && registerForm.controls.name.hasError('minlength')) {
+                    <span class="field-error">השם חייב להכיל לפחות 2 תווים</span>
+                  }
+                </div>
+
+                <div class="input-wrap">
+                  <input
+                    type="email"
+                    formControlName="email"
+                    placeholder="כתובת מייל"
+                    [class.input--error]="registerForm.controls.email.touched && registerForm.controls.email.invalid"
+                  />
+                  @if (registerForm.controls.email.touched && registerForm.controls.email.hasError('required')) {
+                    <span class="field-error">שדה זה הינו חובה</span>
+                  } @else if (registerForm.controls.email.touched && registerForm.controls.email.hasError('email')) {
+                    <span class="field-error">כתובת האימייל אינה תקינה</span>
+                  }
+                </div>
+
+                <div class="input-wrap">
+                  <input
+                    type="tel"
+                    formControlName="phone"
+                    placeholder="טלפון (לדוגמה: 050-1234567)"
+                    [class.input--error]="registerForm.controls.phone.touched && registerForm.controls.phone.invalid"
+                  />
+                  @if (registerForm.controls.phone.touched && registerForm.controls.phone.hasError('invalidPhone')) {
+                    <span class="field-error">מספר טלפון לא תקין — יש להזין מספר ישראלי</span>
+                  }
+                </div>
+
+                <div class="input-wrap">
+                  <input
+                    type="password"
+                    formControlName="password"
+                    placeholder="סיסמה"
+                    [class.input--error]="registerForm.controls.password.touched && registerForm.controls.password.invalid"
+                  />
+                  @if (registerForm.controls.password.touched && registerForm.controls.password.hasError('required')) {
+                    <span class="field-error">שדה זה הינו חובה</span>
+                  } @else if (registerForm.controls.password.touched && registerForm.controls.password.hasError('weakPassword')) {
+                    <span class="field-error">הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה, אות קטנה ומספר</span>
+                  }
+                </div>
+
                 @if (registerError()) {
                   <p class="auth-error">{{ registerError() }}</p>
                 }
                 <button
                   class="btn btn-primary btn-block"
                   type="submit"
-                  [disabled]="registerForm.invalid || registerLoading()"
+                  [disabled]="registerLoading()"
                 >
                   {{ registerLoading() ? "יוצר חשבון..." : "יצירת חשבון" }}
                 </button>
@@ -141,6 +208,20 @@ import { LoginFormComponent } from "./login-form.component";
         flex-direction: column;
         gap: 0.85rem;
       }
+      .input-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        width: 100%;
+      }
+      .field-error {
+        font-size: 0.72rem;
+        color: var(--color-primary);
+        text-align: right;
+      }
+      .input--error {
+        border-color: var(--color-primary) !important;
+      }
       .auth-form input {
         width: 100%;
         padding: 0.7rem 0.9rem;
@@ -201,13 +282,14 @@ export class AuthModalComponent {
   registerError = signal("");
 
   registerForm = this.fb.nonNullable.group({
-    name: ["", Validators.required],
-    email: ["", [Validators.email]],
-    phone: [""],
-    password: ["", [Validators.required, Validators.minLength(6)]],
+    name: ["", [Validators.required, Validators.minLength(2)]],
+    email: ["", [Validators.required, Validators.email]],
+    phone: ["", israeliPhoneValidator()],
+    password: ["", [Validators.required, strongPasswordValidator()]],
   });
 
   submitRegister(): void {
+    this.registerForm.markAllAsTouched();
     if (this.registerForm.invalid) return;
     this.registerLoading.set(true);
     this.registerError.set("");

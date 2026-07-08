@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { OrderService } from "../../core/services/order.service";
 import { OrderCardComponent } from "./order-card.component";
-import { AdminNavComponent } from "./admin-nav.component";
 
 /**
  * Staff Kanban dashboard: three workflow columns backed by OrderService,
@@ -12,10 +11,9 @@ import { AdminNavComponent } from "./admin-nav.component";
 @Component({
   selector: "app-admin-dashboard",
   standalone: true,
-  imports: [CommonModule, OrderCardComponent, AdminNavComponent],
+  imports: [CommonModule, OrderCardComponent],
   template: `
     <div class="dashboard">
-      <app-admin-nav />
       <header class="dashboard__header">
         <h1>לוח ניהול הזמנות</h1>
         <p class="dashboard__subtitle">מעקב בזמן אמת אחר כל ההזמנות הנכנסות</p>

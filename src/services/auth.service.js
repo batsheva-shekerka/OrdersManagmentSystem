@@ -49,4 +49,18 @@ async function getProfile(userId) {
   return user;
 }
 
-module.exports = { register, login, getProfile, generateToken };
+async function updateProfile(userId, { name, email, phone }) {
+  if (email) {
+    const existing = await User.findOne({ email, _id: { $ne: userId } });
+    if (existing) throw ApiError.badRequest("Email already in use");
+  }
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { name, ...(email !== undefined && { email }), ...(phone !== undefined && { phone }) },
+    { new: true, runValidators: true }
+  );
+  if (!user) throw ApiError.notFound("User not found");
+  return user;
+}
+
+module.exports = { register, login, getProfile, updateProfile, generateToken };

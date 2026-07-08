@@ -4,6 +4,7 @@ import { CommonModule } from "@angular/common";
 import { VirtualWaiterComponent } from "./features/virtual-waiter/virtual-waiter.component";
 import { CartDrawerComponent } from "./features/cart/cart-drawer.component";
 import { AuthModalComponent } from "./features/auth/auth-modal.component";
+import { ProfileDropdownComponent } from "./features/auth/profile-dropdown.component";
 import { CartService } from "./core/services/cart.service";
 import { CartUiService } from "./core/services/cart-ui.service";
 import { AuthService } from "./core/services/auth.service";
@@ -27,6 +28,7 @@ interface CategoriesResponse {
     VirtualWaiterComponent,
     CartDrawerComponent,
     AuthModalComponent,
+    ProfileDropdownComponent,
   ],
   template: `
     <div class="app-shell">
@@ -49,75 +51,89 @@ interface CategoriesResponse {
 
           <nav class="header__nav">
 
-            <!-- תפריט with dropdown -->
-            <div
-              class="nav-dropdown"
-              (mouseenter)="menuOpen.set(true)"
-              (mouseleave)="menuOpen.set(false)"
-            >
-              <a
-                routerLink="/menu"
-                routerLinkActive="is-active"
-                [routerLinkActiveOptions]="{ exact: true }"
-                class="nav-dropdown__trigger"
-                (click)="menuOpen.set(false)"
+            @if (!auth.isAdmin()) {
+              <!-- ── Customer navigation ── -->
+
+              <!-- תפריט with dropdown -->
+              <div
+                class="nav-dropdown"
+                (mouseenter)="menuOpen.set(true)"
+                (mouseleave)="menuOpen.set(false)"
               >
-                תפריט
-                <svg class="nav-dropdown__chevron" [class.nav-dropdown__chevron--open]="menuOpen()"
-                  width="12" height="12" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5">
-                  <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </a>
+                <a
+                  routerLink="/menu"
+                  routerLinkActive="is-active"
+                  [routerLinkActiveOptions]="{ exact: true }"
+                  class="nav-dropdown__trigger"
+                  (click)="menuOpen.set(false)"
+                >
+                  תפריט
+                  <svg class="nav-dropdown__chevron" [class.nav-dropdown__chevron--open]="menuOpen()"
+                    width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
 
-              @if (menuOpen() && categories().length > 0) {
-                <div class="nav-dropdown__panel">
-                  <div class="nav-dropdown__header">קטגוריות</div>
-                  @for (cat of categories(); track cat._id) {
-                    <a
-                      class="nav-dropdown__item"
-                      [routerLink]="['/category', cat._id]"
-                      (click)="menuOpen.set(false)"
-                    >
-                      <span class="nav-dropdown__dot"></span>
-                      {{ cat.name }}
+                @if (menuOpen() && categories().length > 0) {
+                  <div class="nav-dropdown__panel">
+                    <div class="nav-dropdown__header">קטגוריות</div>
+                    @for (cat of categories(); track cat._id) {
+                      <a
+                        class="nav-dropdown__item"
+                        [routerLink]="['/category', cat._id]"
+                        (click)="menuOpen.set(false)"
+                      >
+                        <span class="nav-dropdown__dot"></span>
+                        {{ cat.name }}
+                      </a>
+                    }
+                    <div class="nav-dropdown__divider"></div>
+                    <a class="nav-dropdown__item nav-dropdown__item--all" routerLink="/menu" (click)="menuOpen.set(false)">
+                      כל הקטגוריות ←
                     </a>
-                  }
-                  <div class="nav-dropdown__divider"></div>
-                  <a class="nav-dropdown__item nav-dropdown__item--all" routerLink="/menu" (click)="menuOpen.set(false)">
-                    כל הקטגוריות ←
-                  </a>
-                </div>
-              }
-            </div>
+                  </div>
+                }
+              </div>
 
-            @if (auth.isLoggedIn()) {
-              <a routerLink="/orders" routerLinkActive="is-active">ההזמנות שלי</a>
+              @if (auth.isLoggedIn()) {
+                <a routerLink="/orders" routerLinkActive="is-active">ההזמנות שלי</a>
+              }
+
+            } @else {
+              <!-- ── Admin navigation ── -->
+              <span class="admin-badge">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                פאנל ניהול
+              </span>
+
+              <a routerLink="/admin/dashboard" routerLinkActive="is-active">הזמנות</a>
+              <a routerLink="/admin/products" routerLinkActive="is-active">ניהול תפריט</a>
             }
-            @if (auth.isAdmin()) {
-              <a routerLink="/admin/dashboard" routerLinkActive="is-active">ניהול</a>
-            }
+
           </nav>
 
           <div class="header__actions">
-            <button type="button" class="icon-btn" aria-label="סל קניות" (click)="cartUi.toggle()">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                <circle cx="9" cy="21" r="1.2" fill="currentColor" stroke="none" />
-                <circle cx="18" cy="21" r="1.2" fill="currentColor" stroke="none" />
-                <path d="M2.5 3h2l2.2 12.1a2 2 0 0 0 2 1.65h8.1a2 2 0 0 0 1.97-1.63L21 8H6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              @if (cart.count() > 0) {
-                <span class="icon-btn__badge">{{ cart.count() }}</span>
-              }
-            </button>
+
+            @if (!auth.isAdmin()) {
+              <!-- Cart icon — customers only -->
+              <button type="button" class="icon-btn" aria-label="סל קניות" (click)="cartUi.toggle()">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="9" cy="21" r="1.2" fill="currentColor" stroke="none" />
+                  <circle cx="18" cy="21" r="1.2" fill="currentColor" stroke="none" />
+                  <path d="M2.5 3h2l2.2 12.1a2 2 0 0 0 2 1.65h8.1a2 2 0 0 0 1.97-1.63L21 8H6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                @if (cart.count() > 0) {
+                  <span class="icon-btn__badge">{{ cart.count() }}</span>
+                }
+              </button>
+            }
 
             @if (auth.isLoggedIn()) {
-              <a routerLink="/orders" class="icon-btn" aria-label="החשבון שלי">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="8" r="3.5" />
-                  <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" stroke-linecap="round" />
-                </svg>
-              </a>
+              <app-profile-dropdown />
             } @else {
               <button type="button" class="icon-btn" aria-label="התחברות" (click)="authUi.open('login')">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -126,6 +142,7 @@ interface CategoriesResponse {
                 </svg>
               </button>
             }
+
           </div>
         </header>
       </div><!-- /sticky-nav -->
@@ -333,6 +350,23 @@ interface CategoriesResponse {
       }
       .nav-dropdown__item--all:hover {
         background: var(--color-primary-light);
+      }
+
+      /* ── Admin badge ── */
+      .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.7rem;
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        pointer-events: none;
+        user-select: none;
+        white-space: nowrap;
       }
 
       /* ---- Actions ---- */
