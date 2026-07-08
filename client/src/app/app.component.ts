@@ -1,5 +1,5 @@
 import { Component, HostListener, OnInit, inject, signal } from "@angular/core";
-import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { CommonModule } from "@angular/common";
 import { VirtualWaiterComponent } from "./features/virtual-waiter/virtual-waiter.component";
 import { CartDrawerComponent } from "./features/cart/cart-drawer.component";
@@ -47,86 +47,105 @@ interface CategoriesResponse {
             <span class="header__logo-sub">אירוח פרימיום</span>
           </a>
 
-          <nav class="header__nav">
+          @if (auth.isAdmin()) {
+            <!-- ── Admin nav: staff-only links, no cart / customer menu ── -->
+            <nav class="header__nav">
+              <a routerLink="/admin/dashboard" routerLinkActive="is-active">ניהול הזמנות</a>
+              <a routerLink="/admin/products" routerLinkActive="is-active">ניהול תפריט</a>
+            </nav>
 
-            <!-- תפריט with dropdown -->
-            <div
-              class="nav-dropdown"
-              (mouseenter)="menuOpen.set(true)"
-              (mouseleave)="menuOpen.set(false)"
-            >
-              <a
-                routerLink="/menu"
-                routerLinkActive="is-active"
-                [routerLinkActiveOptions]="{ exact: true }"
-                class="nav-dropdown__trigger"
-                (click)="menuOpen.set(false)"
-              >
-                תפריט
-                <svg class="nav-dropdown__chevron" [class.nav-dropdown__chevron--open]="menuOpen()"
-                  width="12" height="12" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2.5">
-                  <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </a>
-
-              @if (menuOpen() && categories().length > 0) {
-                <div class="nav-dropdown__panel">
-                  <div class="nav-dropdown__header">קטגוריות</div>
-                  @for (cat of categories(); track cat._id) {
-                    <a
-                      class="nav-dropdown__item"
-                      [routerLink]="['/category', cat._id]"
-                      (click)="menuOpen.set(false)"
-                    >
-                      <span class="nav-dropdown__dot"></span>
-                      {{ cat.name }}
-                    </a>
-                  }
-                  <div class="nav-dropdown__divider"></div>
-                  <a class="nav-dropdown__item nav-dropdown__item--all" routerLink="/menu" (click)="menuOpen.set(false)">
-                    כל הקטגוריות ←
-                  </a>
-                </div>
-              }
-            </div>
-
-            @if (auth.isLoggedIn()) {
-              <a routerLink="/orders" routerLinkActive="is-active">ההזמנות שלי</a>
-            }
-            @if (auth.isAdmin()) {
-              <a routerLink="/admin/dashboard" routerLinkActive="is-active">ניהול</a>
-            }
-          </nav>
-
-          <div class="header__actions">
-            <button type="button" class="icon-btn" aria-label="סל קניות" (click)="cartUi.toggle()">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                <circle cx="9" cy="21" r="1.2" fill="currentColor" stroke="none" />
-                <circle cx="18" cy="21" r="1.2" fill="currentColor" stroke="none" />
-                <path d="M2.5 3h2l2.2 12.1a2 2 0 0 0 2 1.65h8.1a2 2 0 0 0 1.97-1.63L21 8H6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              @if (cart.count() > 0) {
-                <span class="icon-btn__badge">{{ cart.count() }}</span>
-              }
-            </button>
-
-            @if (auth.isLoggedIn()) {
-              <a routerLink="/orders" class="icon-btn" aria-label="החשבון שלי">
+            <div class="header__actions">
+              <span class="admin-pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                מנהל/ת
+              </span>
+              <button type="button" class="icon-btn" aria-label="התנתקות" (click)="logout()">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="8" r="3.5" />
-                  <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" stroke-linecap="round" />
-                </svg>
-              </a>
-            } @else {
-              <button type="button" class="icon-btn" aria-label="התחברות" (click)="authUi.open('login')">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="8" r="3.5" />
-                  <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" stroke-linecap="round" />
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
-            }
-          </div>
+            </div>
+          } @else {
+            <!-- ── Customer / guest nav ── -->
+            <nav class="header__nav">
+
+              <!-- תפריט with dropdown -->
+              <div
+                class="nav-dropdown"
+                (mouseenter)="menuOpen.set(true)"
+                (mouseleave)="menuOpen.set(false)"
+              >
+                <a
+                  routerLink="/menu"
+                  routerLinkActive="is-active"
+                  [routerLinkActiveOptions]="{ exact: true }"
+                  class="nav-dropdown__trigger"
+                  (click)="menuOpen.set(false)"
+                >
+                  תפריט
+                  <svg class="nav-dropdown__chevron" [class.nav-dropdown__chevron--open]="menuOpen()"
+                    width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5">
+                    <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+
+                @if (menuOpen() && categories().length > 0) {
+                  <div class="nav-dropdown__panel">
+                    <div class="nav-dropdown__header">קטגוריות</div>
+                    @for (cat of categories(); track cat._id) {
+                      <a
+                        class="nav-dropdown__item"
+                        [routerLink]="['/category', cat._id]"
+                        (click)="menuOpen.set(false)"
+                      >
+                        <span class="nav-dropdown__dot"></span>
+                        {{ cat.name }}
+                      </a>
+                    }
+                    <div class="nav-dropdown__divider"></div>
+                    <a class="nav-dropdown__item nav-dropdown__item--all" routerLink="/menu" (click)="menuOpen.set(false)">
+                      כל הקטגוריות ←
+                    </a>
+                  </div>
+                }
+              </div>
+
+              @if (auth.isLoggedIn()) {
+                <a routerLink="/orders" routerLinkActive="is-active">ההזמנות שלי</a>
+              }
+            </nav>
+
+            <div class="header__actions">
+              <button type="button" class="icon-btn" aria-label="סל קניות" (click)="cartUi.toggle()">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="9" cy="21" r="1.2" fill="currentColor" stroke="none" />
+                  <circle cx="18" cy="21" r="1.2" fill="currentColor" stroke="none" />
+                  <path d="M2.5 3h2l2.2 12.1a2 2 0 0 0 2 1.65h8.1a2 2 0 0 0 1.97-1.63L21 8H6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                @if (cart.count() > 0) {
+                  <span class="icon-btn__badge">{{ cart.count() }}</span>
+                }
+              </button>
+
+              @if (auth.isLoggedIn()) {
+                <a routerLink="/orders" class="icon-btn" aria-label="החשבון שלי">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" stroke-linecap="round" />
+                  </svg>
+                </a>
+              } @else {
+                <button type="button" class="icon-btn" aria-label="התחברות" (click)="authUi.open('login')">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" stroke-linecap="round" />
+                  </svg>
+                </button>
+              }
+            </div>
+          }
         </header>
       </div><!-- /sticky-nav -->
 
@@ -341,6 +360,18 @@ interface CategoriesResponse {
         align-items: center;
         gap: 0.5rem;
       }
+      .admin-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        background: var(--color-primary-light);
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
       .icon-btn {
         position: relative;
         display: flex;
@@ -396,6 +427,7 @@ interface CategoriesResponse {
 })
 export class AppComponent implements OnInit {
   private api = inject(ApiService);
+  private router = inject(Router);
   protected cart = inject(CartService);
   protected cartUi = inject(CartUiService);
   protected auth = inject(AuthService);
@@ -406,6 +438,8 @@ export class AppComponent implements OnInit {
   categories = signal<Category[]>([]);
 
   ngOnInit(): void {
+    // Categories only feed the customer-facing menu dropdown — admins never see it.
+    if (this.auth.isAdmin()) return;
     this.api.get<CategoriesResponse>("/categories/active").subscribe({
       next: (res) => this.categories.set(res.data ?? []),
       error: () => {},
@@ -415,5 +449,10 @@ export class AppComponent implements OnInit {
   @HostListener("window:scroll")
   onScroll(): void {
     this.scrolled.set(window.scrollY > 10);
+  }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(["/menu"]);
   }
 }

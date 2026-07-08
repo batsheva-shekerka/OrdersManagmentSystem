@@ -3,7 +3,6 @@ import { CommonModule } from "@angular/common";
 import { ProductService } from "../../core/services/product.service";
 import { CategoryService } from "../../core/services/category.service";
 import { Product } from "../../core/models/product.model";
-import { AdminNavComponent } from "./admin-nav.component";
 import { AdminProductCardComponent } from "./admin-product-card.component";
 import { ProductFormModalComponent } from "./product-form-modal.component";
 
@@ -17,11 +16,9 @@ import { ProductFormModalComponent } from "./product-form-modal.component";
 @Component({
   selector: "app-admin-products",
   standalone: true,
-  imports: [CommonModule, AdminNavComponent, AdminProductCardComponent, ProductFormModalComponent],
+  imports: [CommonModule, AdminProductCardComponent, ProductFormModalComponent],
   template: `
     <div class="admin-products">
-      <app-admin-nav />
-
       <header class="admin-products__header">
         <div>
           <h1>ניהול תפריט</h1>

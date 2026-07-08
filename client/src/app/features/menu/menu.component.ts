@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal } from "@angular/core";
+﻿import { Component, OnDestroy, OnInit, computed, inject, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
@@ -19,6 +19,43 @@ interface CategoriesResponse {
   data: Category[];
 }
 
+/** Static promo copy for each hero slide; the actual category id it links to
+ * is resolved at runtime from the loaded categories (by slug) since ids come
+ * from the database and can't be hardcoded here. */
+interface HeroSlideDef {
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  categorySlug: string;
+}
+
+interface HeroSlide extends HeroSlideDef {
+  categoryRoute: (string | number)[];
+}
+
+const HERO_SLIDE_DEFS: HeroSlideDef[] = [
+  {
+    title: "מגוון מגשי אירוח של גולדיס",
+    subtitle: "מתוקים, מלוחים, סלטים ועוד...",
+    imageUrl: "/assets/hero.jpg",
+    categorySlug: "serving-trays",
+  },
+  {
+    title: "מבחר בשרים עשיר וטרי",
+    subtitle: "כריכים, פיצות ומעדני בשר תוצרת בית",
+    imageUrl: "/assets/categories/meats.jpg",
+    categorySlug: "meats",
+  },
+  {
+    title: "קינוחים מפנקים לכל אירוע",
+    subtitle: "מתוקים ברמה מלונאית לכל שולחן חגיגי",
+    imageUrl: "/assets/categories/desserts.jpg",
+    categorySlug: "desserts",
+  },
+];
+
+const AUTOPLAY_INTERVAL_MS = 5000;
+
 @Component({
   selector: "app-menu",
   standalone: true,
@@ -26,15 +63,30 @@ interface CategoriesResponse {
   template: `
     <div class="home">
       <section class="hero">
-        <img
-          class="hero__image-side"
-          src="/assets/hero.jpg"
-          alt="מגוון מגשי אירוח של גולדיס"
-        />
-        <div class="hero__text-side">
-          <h1 class="hero__title">מגוון מגשי אירוח של גולדיס</h1>
-          <p class="hero__subtitle">מתוקים, מלוחים, סלטים ועוד...</p>
-          <a class="hero__cta" href="#categories-section">בחרו קטגוריה</a>
+        @for (slide of [currentSlide()]; track activeSlideIndex()) {
+          <div class="hero__content fade-in">
+            <h1 class="hero__title">{{ slide.title }}</h1>
+            <p class="hero__subtitle">{{ slide.subtitle }}</p>
+            <a class="hero__cta" [routerLink]="slide.categoryRoute">הזמינו עכשיו</a>
+          </div>
+        }
+
+        <div class="hero__media">
+          @for (slide of [currentSlide()]; track activeSlideIndex()) {
+            <img class="hero__image fade-in" [src]="slide.imageUrl" [alt]="slide.title" />
+          }
+        </div>
+
+        <div class="hero__dots">
+          @for (slide of slides(); track slide.categorySlug; let i = $index) {
+            <button
+              type="button"
+              class="hero__dot"
+              [class.hero__dot--active]="i === activeSlideIndex()"
+              (click)="goToSlide(i)"
+              [attr.aria-label]="'שקופית ' + (i + 1)"
+            ></button>
+          }
         </div>
       </section>
 
@@ -82,28 +134,35 @@ interface CategoriesResponse {
       }
 
       .hero {
-        display: flex;
-        flex-direction: row-reverse;
-        min-height: 420px;
-        background: #fff;
+        position: relative;
+        display: grid;
+        grid-template-columns: 42% 58%;
+        grid-template-areas: "content media";
+        height: 450px;
+        max-height: 500px;
+        overflow: hidden;
+        background: var(--color-bg);
       }
-      .hero__image-side {
-        flex: 1 1 60%;
-        width: 100%;
-        min-height: 420px;
-        object-fit: cover;
-        object-position: center;
-        display: block;
-      }
-      .hero__text-side {
-        flex: 0 0 40%;
+      .hero__content {
+        grid-area: content;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: flex-start;
         padding: 3rem 3.5rem;
-        background: var(--color-surface);
+        background: var(--color-bg);
         text-align: right;
+      }
+      .hero__media {
+        grid-area: media;
+        overflow: hidden;
+      }
+      .hero__image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
       }
       .hero__title {
         font-size: 2.4rem;
@@ -131,6 +190,47 @@ interface CategoriesResponse {
       .hero__cta:hover {
         background: var(--color-primary-dark);
         transform: translateY(-2px);
+      }
+
+      /* ── Slide transition ── */
+      .fade-in {
+        animation: hero-fade 0.6s ease;
+      }
+      @keyframes hero-fade {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+
+      /* ── Carousel dots ── */
+      .hero__dots {
+        position: absolute;
+        bottom: 1.1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        z-index: 2;
+      }
+      .hero__dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: none;
+        padding: 0;
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: background 0.2s, width 0.2s;
+      }
+      .hero__dot:hover {
+        background: rgba(255, 255, 255, 0.9);
+      }
+      .hero__dot--active {
+        width: 22px;
+        border-radius: 999px;
+        background: var(--color-primary);
+        box-shadow: none;
       }
 
       .section {
@@ -231,16 +331,21 @@ interface CategoriesResponse {
           grid-template-rows: repeat(3, 160px);
         }
         .hero {
-          flex-direction: column;
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            "content"
+            "media";
+          height: auto;
+          max-height: none;
         }
-        .hero__image-side {
-          flex: none;
-          width: 100%;
-          min-height: 260px;
+        .hero__media {
+          height: 250px;
         }
-        .hero__text-side {
-          flex: none;
+        .hero__content {
           padding: 2rem 1.5rem;
+        }
+        .hero__dots {
+          bottom: 0.75rem;
         }
       }
       @media (max-width: 560px) {
@@ -258,11 +363,30 @@ interface CategoriesResponse {
     `,
   ],
 })
-export class MenuComponent implements OnInit {
+export class MenuComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
 
   categories = signal<Category[]>([]);
   loading = signal(true);
+
+  activeSlideIndex = signal(0);
+  private autoplayId: ReturnType<typeof setInterval> | null = null;
+
+  /** Resolves each slide's static promo copy against the loaded categories
+   * to find the real category id it should link to; falls back to /menu if
+   * the category hasn't loaded yet or its slug isn't found. */
+  slides = computed<HeroSlide[]>(() => {
+    const cats = this.categories();
+    return HERO_SLIDE_DEFS.map((def) => {
+      const match = cats.find((c) => c.slug === def.categorySlug);
+      return {
+        ...def,
+        categoryRoute: match ? ["/category", match._id] : ["/menu"],
+      };
+    });
+  });
+
+  currentSlide = computed<HeroSlide>(() => this.slides()[this.activeSlideIndex()]);
 
   ngOnInit(): void {
     this.api.get<CategoriesResponse>("/categories/active").subscribe({
@@ -272,6 +396,36 @@ export class MenuComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+
+    this.startAutoplay();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoplay();
+  }
+
+  goToSlide(index: number): void {
+    this.activeSlideIndex.set(index);
+    this.restartAutoplay(); // manual selection shouldn't be immediately overridden by the timer
+  }
+
+  private startAutoplay(): void {
+    this.autoplayId = setInterval(() => {
+      const total = this.slides().length;
+      this.activeSlideIndex.update((i) => (i + 1) % total);
+    }, AUTOPLAY_INTERVAL_MS);
+  }
+
+  private stopAutoplay(): void {
+    if (this.autoplayId !== null) {
+      clearInterval(this.autoplayId);
+      this.autoplayId = null;
+    }
+  }
+
+  private restartAutoplay(): void {
+    this.stopAutoplay();
+    this.startAutoplay();
   }
 
   assetUrl(path?: string): string {

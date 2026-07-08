@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { OrderService } from "../../core/services/order.service";
 import { OrderCardComponent } from "./order-card.component";
-import { AdminNavComponent } from "./admin-nav.component";
 
 /**
  * Staff Kanban dashboard: three workflow columns backed by OrderService,
@@ -12,10 +11,9 @@ import { AdminNavComponent } from "./admin-nav.component";
 @Component({
   selector: "app-admin-dashboard",
   standalone: true,
-  imports: [CommonModule, OrderCardComponent, AdminNavComponent],
+  imports: [CommonModule, OrderCardComponent],
   template: `
     <div class="dashboard">
-      <app-admin-nav />
       <header class="dashboard__header">
         <h1>לוח ניהול הזמנות</h1>
         <p class="dashboard__subtitle">מעקב בזמן אמת אחר כל ההזמנות הנכנסות</p>
@@ -116,9 +114,9 @@ import { AdminNavComponent } from "./admin-nav.component";
       }
 
       .column {
-        background: rgba(255, 255, 255, 0.55);
+        background: rgba(0, 0, 0, 0.015);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
+        border-radius: 16px;
         display: flex;
         flex-direction: column;
         max-height: calc(100vh - 220px);
@@ -166,6 +164,24 @@ import { AdminNavComponent } from "./admin-nav.component";
         display: flex;
         flex-direction: column;
         gap: 0.85rem;
+
+        /* Firefox */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+      }
+      /* Chrome / Safari / Edge */
+      .column__body::-webkit-scrollbar {
+        width: 6px;
+      }
+      .column__body::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .column__body::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 999px;
+      }
+      .column__body::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.28);
       }
       .column__empty {
         text-align: center;
